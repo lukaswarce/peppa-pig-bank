@@ -6,6 +6,8 @@
 // Solidity version
 pragma solidity ^0.8.16;
 
+// My contract address:  <<Update me>>
+
 // Imports
 // This library is used to avoid integers overflows and underflows
 
@@ -23,6 +25,9 @@ contract PiggyBank {
 
     // Set up so that the owner is the person who deployed the contract.
     address public owner;
+
+    // Saving goal
+    uint256 public goal;
 
     // Struct in order to make a deposit
     struct Deposit {
@@ -54,11 +59,25 @@ contract PiggyBank {
     receive() external payable {
     }
 
+
+    // 1.- Set a Saving Goal
+    function savingGoal(uint _goal) public {
+        goal = _goal;
+    }
+
+    function getSavingGoalEth() public view returns (uint256) {
+        return goal.div(10**18);
+    }
+
     // 3.- Function to receive ETH, called depositToTheBank
     function depositToTheBank(uint256 _amount) public payable onlyOwner{
-        // Set a saving goal
-        // Create an event to emit once you reach the saving goal
+        
+        // validate the amount value
         require(msg.value == _amount);
+
+        // Create an event to emit once you reach the saving goal
+        uint256 weiBalance = address(this).balance;
+        require(weiBalance <= goal , "You reach the Saving Goal");
         
         ethersIn = ethersIn.add(_amount);
 
@@ -107,11 +126,5 @@ contract PiggyBank {
 
     function getEthWithdrawn() public view returns (uint256) {
         return ethersOut.div(10**18);
-    }
-
-    // Setters
-    // Set new owner
-    function setNewOwner(address _newOwner) public onlyOwner {
-        owner = _newOwner;
     }
 }
