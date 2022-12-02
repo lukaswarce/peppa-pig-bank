@@ -10,11 +10,17 @@ pragma solidity ^0.8.16;
 
 // Imports
 // This library is used to avoid integers overflows and underflows
-
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+
+// This is an oracle that obtains the latest ETH / USD price using the Goerli testnet. 
+import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+
 
 // Declare the smart contract
 contract PiggyBank {
+
+    // Invoke internal fuction for the agregator
+    AggregatorV3Interface internal priceFeed;
 
     // To avoid integers overflows and underflows
     using SafeMath for uint256;
@@ -33,11 +39,19 @@ contract PiggyBank {
     mapping(address => uint) public deposits;
 
     // Giving initial values of our variables on deployment 
+    /**
+     * Network: Goerli
+     * Aggregator: ETH/USD
+     * Address: 0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e
+     */
     constructor () {
         // The owner of this smart contract will be the deployer
         owner = msg.sender;
         ethersIn = 0;
         ethersOut = 0;
+        priceFeed = AggregatorV3Interface(
+            0xD4a33860578De61DBAbDc8BFdb98FD742fA7028e
+        );
     }
     
     // Create a modifier
@@ -112,5 +126,19 @@ contract PiggyBank {
 
     function getEthWithdrawn() public view returns (uint256) {
         return ethersOut.div(10**18);
+    }
+
+    // 7.- Add a function to get the value of the piggybank balance in USD (cents). So 100 = $1USD. 
+    function getLatestPrice() public view returns (uint256) {
+        (
+            ,
+            /*uint80 roundID*/ int price /*uint startedAt*/ /*uint timeStamp*/ /*uint80 answeredInRound*/,
+            ,
+            ,
+
+        ) = priceFeed.latestRoundData();
+        uint256 ethBalance = this.getBalanceInEth();
+        uint256 ethPrice = ethBalance.mul(uint256(price));
+        return (ethPrice);
     }
 }
